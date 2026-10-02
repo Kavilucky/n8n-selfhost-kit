@@ -1,0 +1,64 @@
+{
+  "name": "2. Отправка лида в Google Таблицу",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "name" },
+            { "name": "contact" },
+            { "name": "text" },
+            { "name": "source" }
+          ]
+        }
+      },
+      "id": "a2000000-0000-4000-8000-000000000001",
+      "name": "Вход (Execute Workflow Trigger)",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "ВСТАВЬ_ID_ТАБЛИЦЫ_СЮДА",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Лиды",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Дата": "={{new Date().toISOString()}}",
+            "Имя": "={{$json.name}}",
+            "Контакт": "={{$json.contact}}",
+            "Сообщение": "={{$json.text}}",
+            "Источник": "={{$json.source}}"
+          }
+        }
+      },
+      "id": "a2000000-0000-4000-8000-000000000002",
+      "name": "Google Sheets: добавить строку",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [480, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": { "id": "2", "name": "Google Sheets account" }
+      }
+    }
+  ],
+  "connections": {
+    "Вход (Execute Workflow Trigger)": { "main": [[{ "node": "Google Sheets: добавить строку", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Переиспользуемый блок: вызывается нодой 'Execute Workflow' из любого другого сценария (Telegram, вебхук формы и т.д.) с полями name/contact/text/source, дописывает строку в Google-таблицу 'Лиды'. Перед запуском: 1) подключи Google Sheets credential, 2) вставь ID своей таблицы, 3) создай в ней лист 'Лиды' с колонками Дата/Имя/Контакт/Сообщение/Источник."
+  }
+}

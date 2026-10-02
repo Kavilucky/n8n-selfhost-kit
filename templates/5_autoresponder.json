@@ -1,0 +1,82 @@
+{
+  "name": "5. Автоответчик по ключевым словам",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "a5000000-0000-4000-8000-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{$json.message.text}}",
+              "rightValue": "цена|стоимость|сколько стоит|прайс",
+              "operator": { "type": "string", "operation": "regex" }
+            }
+          ],
+          "combinator": "or"
+        }
+      },
+      "id": "a5000000-0000-4000-8000-000000000002",
+      "name": "Спросили про цену?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.message.chat.id}}",
+        "text": "Спасибо за интерес! Базовый тариф — 490 ₽/мес за сервер + бесплатная настройка по гайду из закреплённого поста. Если нужна помощь с установкой — напишите \"нужна помощь\", отвечу лично."
+      },
+      "id": "a5000000-0000-4000-8000-000000000003",
+      "name": "Автоответ: цена",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [700, 220],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.message.chat.id}}",
+        "text": "Спасибо за сообщение! Все инструкции и шаблоны — в закреплённом посте канала. Если вопрос не по теме гайда, напишу лично в ближайшее время."
+      },
+      "id": "a5000000-0000-4000-8000-000000000004",
+      "name": "Автоответ: общий",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [700, 380],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Спросили про цену?", "type": "main", "index": 0 }]] },
+    "Спросили про цену?": {
+      "main": [
+        [{ "node": "Автоответ: цена", "type": "main", "index": 0 }],
+        [{ "node": "Автоответ: общий", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Ловит входящие сообщения боту, проверяет ключевые слова про цену и отвечает разным текстом в зависимости от совпадения. Список ключевых слов и оба текста ответа поменяй под себя прямо в нодах."
+  }
+}

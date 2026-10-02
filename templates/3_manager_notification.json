@@ -1,0 +1,48 @@
+{
+  "name": "3. Уведомление менеджеру",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "name" },
+            { "name": "contact" },
+            { "name": "text" },
+            { "name": "source" }
+          ]
+        }
+      },
+      "id": "a3000000-0000-4000-8000-000000000001",
+      "name": "Вход (Execute Workflow Trigger)",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "ВСТАВЬ_CHAT_ID_МЕНЕДЖЕРА",
+        "text": "=🔔 Новая заявка ({{$json.source}})\nИмя: {{$json.name}}\nКонтакт: {{$json.contact}}\nСообщение: {{$json.text}}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "a3000000-0000-4000-8000-000000000002",
+      "name": "Telegram: сообщение менеджеру",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [480, 300],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    }
+  ],
+  "connections": {
+    "Вход (Execute Workflow Trigger)": { "main": [[{ "node": "Telegram: сообщение менеджеру", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Переиспользуемый блок: шлёт карточку лида менеджеру в личку/группу Telegram. chat_id менеджера или группы узнать через бота @userinfobot (или @getidsbot для группы). Вызывается нодой 'Execute Workflow' из сценариев 1 (Telegram) и 4 (вебхук формы)."
+  }
+}
