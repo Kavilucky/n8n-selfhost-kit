@@ -36,4 +36,4 @@ wget -qO deploy_n8n.sh https://raw.githubusercontent.com/Kavilucky/n8n-selfhost-
 
 ## Внедрение под ключ
 
-Установка и настройка n8n, отказоустойчивость, интеграция с amoCRM, Битрикс24, 1С: @konstantin_100.
+Установка и настройка n8n, отказоустойчивость, интеграция с amoCRM, Битрикс24, 1С: подробности в описании Telegram-канала @ByteAutomate_AI.
