@@ -1,0 +1,482 @@
+{
+  "name": "Чеки в таблицу: Telegram, Qwen через Ollama, проверка суммы",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "rp-01",
+      "name": "Telegram: сообщение",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot (укажите свои учётные данные)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "photo-check",
+              "leftValue": "={{ !!($json.message && $json.message.photo && $json.message.photo.length) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "rp-02",
+      "name": "Есть фото?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "Пришлите фотографию чека (не файл, а обычное фото).",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "rp-03",
+      "name": "Просим прислать фото",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        520,
+        520
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot (укажите свои учётные данные)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $json.message || {};\nconst photos = m.photo || [];\nconst best = photos[photos.length - 1];\nreturn [{ json: { file_id: best.file_id, chat_id: m.chat.id } }];"
+      },
+      "id": "rp-04",
+      "name": "Выбрать фото",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.file_id }}",
+        "download": true
+      },
+      "id": "rp-05",
+      "name": "Скачать фото",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot (укажите свои учётные данные)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const buf = await this.helpers.getBinaryDataBuffer(0, 'data');\nreturn [{ json: { image_b64: buf.toString('base64'), chat_id: $('Выбрать фото').first().json.chat_id } }];"
+      },
+      "id": "rp-06",
+      "name": "Фото в base64",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'qwen2.5vl:7b', stream: false, options: { temperature: 0 }, format: {\"type\": \"object\", \"properties\": {\"seller\": {\"type\": \"string\"}, \"inn\": {\"type\": \"string\"}, \"date\": {\"type\": \"string\"}, \"total\": {\"type\": \"number\"}, \"items\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"qty\": {\"type\": \"number\"}, \"price\": {\"type\": \"number\"}, \"sum\": {\"type\": \"number\"}}, \"required\": [\"name\", \"sum\"]}}}, \"required\": [\"seller\", \"inn\", \"date\", \"total\", \"items\"]}, messages: [{ role: 'user', content: \"Ты читаешь фотографию кассового чека. Верни только JSON по схеме. seller: название продавца, inn: ИНН продавца (только цифры), date: дата покупки в формате ГГГГ-ММ-ДД, total: итоговая сумма числом, items: список позиций (name: название, qty: количество, price: цена за единицу, sum: сумма по позиции). Ничего не выдумывай: если значение не читается, верни пустую строку, а для чисел 0. Суммы пиши числом с точкой, без пробелов и знака валюты.\", images: [$json.image_b64] }] }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "rp-07",
+      "name": "Qwen через Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = (($json.message || {}).content) || '';\nconst chat_id = $('Выбрать фото').first().json.chat_id;\nlet d = null;\ntry { d = JSON.parse(raw); } catch (e) { d = null; }\nif (!d) { return [{ json: { status: 'retry', reason: 'ответ модели не разобрался', chat_id } }]; }\nconst items = Array.isArray(d.items) ? d.items : [];\nconst itemsSum = Math.round(items.reduce((a, it) => a + (Number(it.sum) || 0), 0) * 100) / 100;\nconst total = Math.round((Number(d.total) || 0) * 100) / 100;\nconst filled = Boolean(d.seller) && Boolean(d.date) && total > 0 && items.length > 0;\nconst matches = Math.abs(itemsSum - total) < 0.015;\nconst status = filled && matches ? 'ok' : 'retry';\nconst reason = !filled ? 'часть полей не прочиталась' : (!matches ? 'сумма позиций не равна итогу' : '');\nreturn [{ json: { status, reason, chat_id, seller: d.seller || '', inn: d.inn || '', date: d.date || '', total, items_sum: itemsSum, items_count: items.length, items } }];"
+      },
+      "id": "rp-08",
+      "name": "Проверить сумму",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "status-ok",
+              "leftValue": "={{ $json.status === 'ok' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "rp-09",
+      "name": "Сумма сходится?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $getWorkflowStaticData('global');\ndata.rows = data.rows || [];\nconst q = (v) => '\"' + String(v).replace(/\"/g, '\"\"') + '\"';\ndata.rows.push([$json.date, $json.seller, $json.inn, $json.total.toFixed(2), $json.items_count].map(q).join(';'));\nconst csv = '\\uFEFF' + ['\"Дата\";\"Продавец\";\"ИНН\";\"Итого\";\"Позиций\"'].concat(data.rows).join('\\n');\nreturn [{ json: { chat_id: $json.chat_id, seller: $json.seller, inn: $json.inn, date: $json.date, total: $json.total, items_count: $json.items_count, csv, rows_total: data.rows.length } }];"
+      },
+      "id": "rp-10",
+      "name": "Добавить строку в таблицу",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "csv",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileName": "expenses.csv",
+          "encoding": "utf8"
+        }
+      },
+      "id": "rp-11",
+      "name": "CSV в файл",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2340,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/home/node/.n8n-files/expenses.csv",
+        "dataPropertyName": "data",
+        "options": {
+          "append": false
+        }
+      },
+      "id": "rp-12",
+      "name": "Записать expenses.csv",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        2600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Добавить строку в таблицу').first().json.chat_id }}",
+        "text": "=Записано ✓\n{{ $('Добавить строку в таблицу').first().json.seller }}\nИНН {{ $('Добавить строку в таблицу').first().json.inn }}\n{{ $('Добавить строку в таблицу').first().json.date }} · {{ $('Добавить строку в таблицу').first().json.total.toFixed(2) }} ₽\nПозиций: {{ $('Добавить строку в таблицу').first().json.items_count }}\nСверьте сумму с чеком.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "rp-13",
+      "name": "Ответ: записано",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2860,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot (укажите свои учётные данные)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "=Не уверен в распознавании ({{ $json.reason }}). Сфотографируйте чек ещё раз: ровно, при хорошем свете, чтобы весь чек был в кадре.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "rp-14",
+      "name": "Ответ: перефотографируйте",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2080,
+        440
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot (укажите свои учётные данные)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "rp-15",
+      "name": "(необязательно) Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2340,
+        20
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "width": 1200,
+        "height": 460,
+        "content": "## Чеки в таблицу: шаблон воркфлоу (пример)\n1. Укажите учётные данные Telegram во всех узлах Telegram (токен бота от @BotFather).\n2. В узле «Qwen через Ollama» проверьте адрес Ollama и модель `qwen2.5vl:7b` (из контейнера n8n на Windows и macOS адрес `host.docker.internal`; на Linux добавьте хост или укажите IP).\n3. Telegram Trigger требует публичный HTTPS-адрес: задайте `WEBHOOK_URL` у n8n (например, через туннель).\n4. Путь `/home/node/.n8n-files/expenses.csv` лежит в папке файлов n8n; при другой установке поменяйте путь в узле «Записать expenses.csv».\n5. Строки таблицы копятся в данных воркфлоу, поэтому **активируйте** воркфлоу (в ручном тесте накопление не сохраняется).\n6. Модель может ошибаться на выцветшей термобумаге: сверяйте суммы и храните оригиналы чеков.\nЭто шаблон: откройте каждый узел и проверьте параметры на вашей версии n8n."
+      },
+      "id": "rp-note",
+      "name": "Памятка",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -260
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram: сообщение": {
+      "main": [
+        [
+          {
+            "node": "Есть фото?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Есть фото?": {
+      "main": [
+        [
+          {
+            "node": "Выбрать фото",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Просим прислать фото",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Выбрать фото": {
+      "main": [
+        [
+          {
+            "node": "Скачать фото",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Скачать фото": {
+      "main": [
+        [
+          {
+            "node": "Фото в base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Фото в base64": {
+      "main": [
+        [
+          {
+            "node": "Qwen через Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qwen через Ollama": {
+      "main": [
+        [
+          {
+            "node": "Проверить сумму",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Проверить сумму": {
+      "main": [
+        [
+          {
+            "node": "Сумма сходится?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Сумма сходится?": {
+      "main": [
+        [
+          {
+            "node": "Добавить строку в таблицу",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ответ: перефотографируйте",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Добавить строку в таблицу": {
+      "main": [
+        [
+          {
+            "node": "CSV в файл",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CSV в файл": {
+      "main": [
+        [
+          {
+            "node": "Записать expenses.csv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Записать expenses.csv": {
+      "main": [
+        [
+          {
+            "node": "Ответ: записано",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

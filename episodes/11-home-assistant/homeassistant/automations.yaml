@@ -1,0 +1,11 @@
+# Пример автоматизации «датчик движения включает свет». Названия сущностей (entity_id) замените своими:
+# они зависят от имён, которые вы дали устройствам в Zigbee2MQTT (смотрите Настройки, Устройства и службы, Сущности).
+- alias: "Свет при движении (пример)"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.motion_living_room_occupancy
+      to: "on"
+  action:
+    - service: light.turn_on
+      target:
+        entity_id: light.living_room_lamp
