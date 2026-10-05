@@ -12,6 +12,8 @@ where git >nul 2>nul || goto :no_git
 where gh >nul 2>nul || goto :no_gh
 gh auth status >nul 2>nul || goto :no_auth
 
+rem автор коммитов: GitHub noreply-адрес (личная почта в публичные коммиты не попадает)
+for /f "delims=" %%i in ('gh api user --jq .id') do set "GHID=%%i"
 set OK=0
 set FAIL=0
 for %%R in (ep01-n8n-selfhost ep02-whisper-transcribe ep03-local-doc-ai ep04-news-pipeline-n8n ep05-carplay-assistant ep06-photo-dedup ep07-immich-cloud ep08-receipt-parser ep09-backup-321 ep10-obsidian-second-brain ep11-home-assistant ep12-password-leak-check ep13-voice-estimator ep14-debt-collector ep15-local-docs-parser ep16-proxy-traffic-check) do call :publish %%R
@@ -29,12 +31,19 @@ if not exist "!REPO!\" (
   goto :eof
 )
 pushd "!REPO!"
-rem если папка без .git - создаём репозиторий и коммит
-if not exist ".git" (
+rem нет .git или нет ни одного коммита (например, после прошлой неудачной попытки) - доделываем
+if not exist ".git" git init -q -b main
+git rev-parse --verify HEAD >nul 2>nul
+if errorlevel 1 (
   set "N=!REPO:~2,2!"
-  git init -q -b main
   git add -A
-  git commit -q -m "feat: initial release for episode !N!"
+  git -c user.name=%OWNER% -c user.email=!GHID!+%OWNER%@users.noreply.github.com commit -q -m "feat: initial release for episode !N!"
+  if errorlevel 1 (
+    echo   ОШИБКА: не удалось создать коммит в !REPO!
+    set /a FAIL+=1
+    popd
+    goto :eof
+  )
 )
 gh repo view %OWNER%/!REPO! >nul 2>nul
 if not errorlevel 1 (

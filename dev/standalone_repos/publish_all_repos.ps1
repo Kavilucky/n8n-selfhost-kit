@@ -48,6 +48,14 @@ if (-not $DryRun) {
     }
 }
 
+# Автор коммитов: GitHub noreply-адрес (личная почта в публичные коммиты не попадает).
+# Берётся только для этих репозиториев, глобальные настройки git не меняются.
+$GitId = ""
+if (-not $DryRun) {
+    $GitId = (gh api user --jq .id).Trim()
+}
+$IdArgs = @("-c", "user.name=$Owner", "-c", "user.email=$GitId+$Owner@users.noreply.github.com")
+
 $ok = 0; $fail = 0
 foreach ($repo in $Repos) {
     Write-Host "=== $repo"
@@ -60,12 +68,14 @@ foreach ($repo in $Repos) {
 
     Push-Location -LiteralPath $dir
     try {
-        # если папка без .git - создаём репозиторий и коммит
-        if (-not (Test-Path -LiteralPath ".git")) {
+        # нет .git или нет ни одного коммита (например, после прошлой неудачной попытки) - доделываем
+        if (-not (Test-Path -LiteralPath ".git")) { git init -q -b main }
+        git rev-parse --verify HEAD *> $null
+        if ($LASTEXITCODE -ne 0) {
             $num = $repo.Substring(2, 2)
-            git init -q -b main
             git add -A
-            git commit -q -m "feat: initial release for episode $num"
+            git @IdArgs commit -q -m "feat: initial release for episode $num"
+            if ($LASTEXITCODE -ne 0) { Write-Host "  ОШИБКА: не удалось создать коммит в $repo" -ForegroundColor Red; $fail++; continue }
         }
         gh repo view "$Owner/$repo" *> $null
         if ($LASTEXITCODE -eq 0) {

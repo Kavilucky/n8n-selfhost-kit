@@ -31,6 +31,7 @@ command -v gh >/dev/null || { echo "Не найден gh. Установите: 
 gh auth status >/dev/null 2>&1 || { echo "Нет входа в GitHub. Выполните: gh auth login"; exit 1; }
 fi
 
+GHID=""; [ "${DRY_RUN:-0}" = "1" ] || GHID=$(gh api user --jq .id)
 OK=0; FAIL=0
 for repo in "${REPOS[@]}"; do
   echo "=== $repo"
@@ -38,10 +39,11 @@ for repo in "${REPOS[@]}"; do
   if [ "${DRY_RUN:-0}" = "1" ]; then echo "  [dry-run] gh repo create $OWNER/$repo --public --source=. --push"; continue; fi
   (
     cd "$repo" || exit 1
-    # если папка скопирована без .git (например, из архива) - создаём репозиторий и коммит
-    if [ ! -d .git ]; then
+    # нет .git или нет ни одного коммита - доделываем
+    [ -d .git ] || git init -q -b main
+    if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
       num="${repo#ep}"; num="${num%%-*}"
-      git init -q -b main && git add -A && git commit -q -m "feat: initial release for episode $num" || exit 1
+      git add -A && git -c user.name="$OWNER" -c user.email="$GHID+$OWNER@users.noreply.github.com" commit -q -m "feat: initial release for episode $num" || exit 1
     fi
     if gh repo view "$OWNER/$repo" >/dev/null 2>&1; then
       echo "  репозиторий уже есть на GitHub, отправляю изменения"
