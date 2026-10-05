@@ -43,7 +43,14 @@ for repo in "${REPOS[@]}"; do
       num="${repo#ep}"; num="${num%%-*}"
       git init -q -b main && git add -A && git commit -q -m "feat: initial release for episode $num" || exit 1
     fi
-    gh repo create "$OWNER/$repo" --public --source=. --push
+    if gh repo view "$OWNER/$repo" >/dev/null 2>&1; then
+      echo "  репозиторий уже есть на GitHub, отправляю изменения"
+      git remote get-url origin >/dev/null 2>&1 || git remote add origin "https://github.com/$OWNER/$repo.git"
+      git push -u origin main
+    else
+      gh repo create "$OWNER/$repo" --public --source=. --push
+    fi
   ) && OK=$((OK+1)) || { echo "  ОШИБКА: $repo"; FAIL=$((FAIL+1)); }
+  sleep 2  # пауза против rate limit API GitHub
 done
 echo "Готово. Успешно: $OK, с ошибками: $FAIL"
