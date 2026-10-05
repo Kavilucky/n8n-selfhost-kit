@@ -30,7 +30,7 @@
   - Свой chat_id в Telegram, куда бот будет присылать карточки уровня 4.
 
 Где запускать: на своём компьютере (если он включён по утрам) или на арендованном сервере. Партнёрская ссылка: Timeweb Cloud https://timeweb.cloud/r/nf413716 . Это ПАРТНЁРСКАЯ ссылка: автор канала получает вознаграждение, цена для вас не меняется. Бонус и тариф от ~490 руб./мес. указаны на момент записи со слов автора, не гарантия, условия проверяйте на сайте. Установка n8n одной командой (скрипт задаёт вопросы, поэтому не «curl | bash»):
-  curl -fsSL https://raw.githubusercontent.com/Kavilucky/n8n-selfhost-kit/main/deploy_n8n.sh -o deploy_n8n.sh && bash deploy_n8n.sh
+  curl -fsSL https://raw.githubusercontent.com/Kavilucky/ep01-n8n-selfhost/main/deploy_n8n.sh -o deploy_n8n.sh && bash deploy_n8n.sh
 
 ============================================================
 4. УСТАНОВКА ПО ШАГАМ

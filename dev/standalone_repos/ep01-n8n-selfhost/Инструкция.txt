@@ -69,10 +69,10 @@ VPS - это ваш компьютер в дата-центре, который 
 
 1. Запустите скрипт. Есть два способа, выберите один.
    ВАРИАНТ А (рекомендую): одна команда. Скопируйте строку ниже, вставьте в консоль (обычно Ctrl+Shift+V) и нажмите Enter:
-   curl -fsSL https://raw.githubusercontent.com/Kavilucky/n8n-selfhost-kit/main/deploy_n8n.sh -o deploy_n8n.sh && bash deploy_n8n.sh
+   curl -fsSL https://raw.githubusercontent.com/Kavilucky/ep01-n8n-selfhost/main/deploy_n8n.sh -o deploy_n8n.sh && bash deploy_n8n.sh
    Если консоль пишет, что curl не найден, используйте wget:
-   wget -qO deploy_n8n.sh https://raw.githubusercontent.com/Kavilucky/n8n-selfhost-kit/main/deploy_n8n.sh && bash deploy_n8n.sh
-   Команда скачивает скрипт из публичного репозитория автора (https://github.com/Kavilucky/n8n-selfhost-kit) и сразу запускает его. Это тот же файл deploy_n8n.sh, что лежит в этом архиве: ссылку можно открыть в браузере и прочитать скрипт до запуска. Редактировать ничего не нужно.
+   wget -qO deploy_n8n.sh https://raw.githubusercontent.com/Kavilucky/ep01-n8n-selfhost/main/deploy_n8n.sh && bash deploy_n8n.sh
+   Команда скачивает скрипт из публичного репозитория автора (https://github.com/Kavilucky/ep01-n8n-selfhost) и сразу запускает его. Это тот же файл deploy_n8n.sh, что лежит в этом архиве: ссылку можно открыть в браузере и прочитать скрипт до запуска. Редактировать ничего не нужно.
    ВАРИАНТ Б (запасной): запуск локального файла из архива.
    - в консоли введите: nano deploy_n8n.sh и нажмите Enter (откроется простой текстовый редактор);
    - на своём компьютере откройте файл deploy_n8n.sh из архива в Блокноте, нажмите Ctrl+A, затем Ctrl+C;
