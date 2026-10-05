@@ -66,6 +66,7 @@ foreach ($repo in $Repos) {
     }
     if ($DryRun) { Write-Host "  [dry-run] gh repo create $Owner/$repo --public --source=. --push"; continue }
 
+    $created = $false
     Push-Location -LiteralPath $dir
     try {
         # нет .git или нет ни одного коммита (например, после прошлой неудачной попытки) - доделываем
@@ -84,14 +85,15 @@ foreach ($repo in $Repos) {
             if ($LASTEXITCODE -ne 0) { git remote add origin "https://github.com/$Owner/$repo.git" }
             git push -u origin main
         } else {
+            $created = $true
             gh repo create "$Owner/$repo" --public --source=. --push
         }
         if ($LASTEXITCODE -eq 0) { $ok++ } else { Write-Host "  ОШИБКА: $repo" -ForegroundColor Red; $fail++ }
     } finally {
         Pop-Location
     }
-    # пауза против rate limit API GitHub
-    Start-Sleep -Seconds 2
+    # пауза против лимита GitHub на создание репозиториев (после создания - длинная)
+    if ($created) { Start-Sleep -Seconds 20 } else { Start-Sleep -Seconds 2 }
 }
 Write-Host ""
 Write-Host "Готово. Успешно: $ok, с ошибками: $fail"

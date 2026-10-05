@@ -24,6 +24,7 @@ exit /b 0
 
 :publish
 set "REPO=%~1"
+set "CR="
 echo === !REPO!
 if not exist "!REPO!\" (
   echo   пропуск: нет папки !REPO!
@@ -51,6 +52,7 @@ if not errorlevel 1 (
   git remote get-url origin >nul 2>nul || git remote add origin https://github.com/%OWNER%/!REPO!.git
   git push -u origin main
 ) else (
+  set "CR=1"
   gh repo create %OWNER%/!REPO! --public --source=. --push
 )
 if errorlevel 1 (
@@ -60,8 +62,8 @@ if errorlevel 1 (
   set /a OK+=1
 )
 popd
-rem пауза против rate limit API GitHub
-timeout /t 2 /nobreak >nul
+rem пауза против лимита GitHub на создание репозиториев (после создания - длинная)
+if defined CR (timeout /t 20 /nobreak >nul) else (timeout /t 2 /nobreak >nul)
 goto :eof
 
 :no_git

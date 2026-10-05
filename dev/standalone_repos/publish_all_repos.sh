@@ -32,6 +32,7 @@ gh auth status >/dev/null 2>&1 || { echo "Нет входа в GitHub. Выпо�
 fi
 
 GHID=""; [ "${DRY_RUN:-0}" = "1" ] || GHID=$(gh api user --jq .id)
+NEWFLAG=$(mktemp -u)
 OK=0; FAIL=0
 for repo in "${REPOS[@]}"; do
   echo "=== $repo"
@@ -50,9 +51,10 @@ for repo in "${REPOS[@]}"; do
       git remote get-url origin >/dev/null 2>&1 || git remote add origin "https://github.com/$OWNER/$repo.git"
       git push -u origin main
     else
+      touch "$NEWFLAG"
       gh repo create "$OWNER/$repo" --public --source=. --push
     fi
   ) && OK=$((OK+1)) || { echo "  ОШИБКА: $repo"; FAIL=$((FAIL+1)); }
-  sleep 2  # пауза против rate limit API GitHub
+  if [ -e "$NEWFLAG" ]; then rm -f "$NEWFLAG"; sleep 20; else sleep 2; fi  # пауза против лимита GitHub
 done
 echo "Готово. Успешно: $OK, с ошибками: $FAIL"
