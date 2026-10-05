@@ -1,0 +1,60 @@
+{
+  "name": "1. Сбор лидов из Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "1", "name": "chat_id", "type": "number", "value": "={{$json.message.chat.id}}" },
+            { "id": "2", "name": "username", "type": "string", "value": "={{$json.message.from.username}}" },
+            { "id": "3", "name": "first_name", "type": "string", "value": "={{$json.message.from.first_name}}" },
+            { "id": "4", "name": "text", "type": "string", "value": "={{$json.message.text}}" },
+            { "id": "5", "name": "date", "type": "string", "value": "={{new Date($json.message.date * 1000).toISOString()}}" }
+          ]
+        }
+      },
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "name": "Извлечь поля лида",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{$json.chat_id}}",
+        "text": "Спасибо! Заявку получил, отвечу в ближайшее время."
+      },
+      "id": "a1000000-0000-4000-8000-000000000003",
+      "name": "Подтверждение лиду",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [700, 300],
+      "credentials": {
+        "telegramApi": { "id": "1", "name": "Telegram account" }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": { "main": [[{ "node": "Извлечь поля лида", "type": "main", "index": 0 }]] },
+    "Извлечь поля лида": { "main": [[{ "node": "Подтверждение лиду", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "description": "Триггер на новое сообщение в Telegram-боте -> вытаскивает контакт и текст заявки -> шлёт автоответ. Дальше приклей ноды из шаблонов 2 (запись в таблицу) и 3 (уведомление менеджеру) к 'Извлечь поля лида'."
+  }
+}

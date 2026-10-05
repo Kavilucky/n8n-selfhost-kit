@@ -1,0 +1,83 @@
+# Прямые команды (альтернатива gh). Сначала создайте пустые публичные репозитории на github.com/new
+# с теми же именами (без README/LICENSE), затем выполните блок нужного репозитория.
+
+cd ep01-n8n-selfhost
+git remote add origin https://github.com/Kavilucky/ep01-n8n-selfhost.git
+git push -u origin main
+cd ..
+
+cd ep02-whisper-transcribe
+git remote add origin https://github.com/Kavilucky/ep02-whisper-transcribe.git
+git push -u origin main
+cd ..
+
+cd ep03-local-doc-ai
+git remote add origin https://github.com/Kavilucky/ep03-local-doc-ai.git
+git push -u origin main
+cd ..
+
+cd ep04-news-pipeline-n8n
+git remote add origin https://github.com/Kavilucky/ep04-news-pipeline-n8n.git
+git push -u origin main
+cd ..
+
+cd ep05-carplay-assistant
+git remote add origin https://github.com/Kavilucky/ep05-carplay-assistant.git
+git push -u origin main
+cd ..
+
+cd ep06-photo-dedup
+git remote add origin https://github.com/Kavilucky/ep06-photo-dedup.git
+git push -u origin main
+cd ..
+
+cd ep07-immich-cloud
+git remote add origin https://github.com/Kavilucky/ep07-immich-cloud.git
+git push -u origin main
+cd ..
+
+cd ep08-receipt-parser
+git remote add origin https://github.com/Kavilucky/ep08-receipt-parser.git
+git push -u origin main
+cd ..
+
+cd ep09-backup-321
+git remote add origin https://github.com/Kavilucky/ep09-backup-321.git
+git push -u origin main
+cd ..
+
+cd ep10-obsidian-second-brain
+git remote add origin https://github.com/Kavilucky/ep10-obsidian-second-brain.git
+git push -u origin main
+cd ..
+
+cd ep11-home-assistant
+git remote add origin https://github.com/Kavilucky/ep11-home-assistant.git
+git push -u origin main
+cd ..
+
+cd ep12-password-leak-check
+git remote add origin https://github.com/Kavilucky/ep12-password-leak-check.git
+git push -u origin main
+cd ..
+
+cd ep13-voice-estimator
+git remote add origin https://github.com/Kavilucky/ep13-voice-estimator.git
+git push -u origin main
+cd ..
+
+cd ep14-debt-collector
+git remote add origin https://github.com/Kavilucky/ep14-debt-collector.git
+git push -u origin main
+cd ..
+
+cd ep15-local-docs-parser
+git remote add origin https://github.com/Kavilucky/ep15-local-docs-parser.git
+git push -u origin main
+cd ..
+
+cd ep16-proxy-traffic-check
+git remote add origin https://github.com/Kavilucky/ep16-proxy-traffic-check.git
+git push -u origin main
+cd ..
+
